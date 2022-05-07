@@ -282,8 +282,7 @@ var createTestFunc = function createTestFunc() {
     } else if (ruleType === 'regExp') {
       rst = testRule.test("".concat(key));
     } else {
-      var funcRst = testRule(path, value, matchPath, matchRule);
-      rst = funcRst && ['string', 'symbol'].includes(_typeof(funcRst));
+      rst = testRule(path, value, matchPath, matchRule);
     }
 
     if (rst) {

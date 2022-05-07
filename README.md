@@ -156,3 +156,42 @@ interface IOptions {
 }
 ````
 
+
+
+### 实现思路
+
+旧版本因为时间比较紧，当时水平也比较差，实现挺乱的，拓展性也差。重构后以更合理的数据结构实现该功能。
+
+假设规则数据如下:
+
+````javascript
+const testFunc = (path, value) => path[path.length-1].endsWith('b')
+const rules = new Map([[[/a|e/, ['b', /^b/, testFunc], 'xxx'], 'transValue']]);
+const data = {
+    a: {
+        b: {
+			xxx: 7
+		},
+        ab: {abc: 4},
+    },
+	b: 5,
+	e: {acb: {xxx: 6}}
+}
+````
+
+
+
+可以发现当规则项中存在数组(`['b', /^b/, testFunc]`)时，匹配规则存在多种路径。而每种匹配路径，都有可能匹配多个路径的数据。因此定义两个**树结构**：
+
++ 规则树
++ 匹配数据树
+
+转换流程如下图所示：
+
+![流程图](https://s1.ax1x.com/2022/05/07/OQ2Tvq.png)
+
+rules生成的数据结构命名为**规则树**
+
+规则树和数据生成的数据结构命名为**匹配数据树**
+
+通过对规则树和匹配数据树的操作可以很方便的完成各种配置，如匹配优先级`options.priority`,可以通过修改规则树中各节点children的顺序实现；`options.matchFullRules`配置可以通过决定是否对匹配数据树进行裁剪实现。

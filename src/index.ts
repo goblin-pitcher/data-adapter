@@ -29,13 +29,11 @@ const createTestFunc = (): IFunc<[...args: Parameters<TransformFunc>], boolean> 
     const ruleType = getRuleType(testRule);
     if (ruleType === 'string') {
       rst = key === testRule
-    } else
-      if (ruleType === 'regExp') {
+    } else if (ruleType === 'regExp') {
         rst = (<RegExp>testRule).test(`${key}`);
-      } else {
-        const funcRst = (<TransformFunc>testRule)(path, value, matchPath, matchRule)
-        rst = funcRst && ['string', 'symbol'].includes(typeof funcRst);
-      }
+    } else {
+      rst = (<TransformFunc>testRule)(path, value, matchPath, matchRule)
+    }
     if (rst) {
       banList.add(testKey)
     }

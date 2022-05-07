@@ -76,9 +76,10 @@ describe('adapter test', ()=>{
     })
   })
   it('change path', ()=>{
+    obj = {...obj, b: {...obj.b, a: {fx: 'aaaaaaa'}}}
     rules = new Map([
       ['a', ['e', 'transKey-a-b']],
-      [['b', /a|g/, 'f'], (path, value)=>`transKey-${path[path.length - 1]}`]
+      [['b', /a|g/, [(path,value)=>path[path.length-1].startsWith('f')&&value.length>5, 'f']], (path, value)=>`transKey-${path[path.length - 1]}`]
     ])
     const rst = adapter(obj, rules, {})
     expect(rst).toEqual({
@@ -86,7 +87,7 @@ describe('adapter test', ()=>{
         g:{
           'transKey-f':"xxx"
         },
-        a:5,
+        a:{'transKey-fx': 'aaaaaaa'},
         d:7,
         f:9
       },
