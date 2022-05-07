@@ -8,6 +8,7 @@ interface IOptions {
   retain?: boolean;
   transValue?: boolean;
   matchFullRules?: boolean;
+  relativePath?: boolean,
   priority?: keyRuleFuncName[];
 }
 

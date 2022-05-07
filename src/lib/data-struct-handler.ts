@@ -35,11 +35,11 @@ const createDefRuleDataNode = (): RuleDataNode => ({
   rulePath: []
 })
 
-const traverseByGrade = <T extends BaseTree<T>>(root: T, visit: IFunc<[T], void>) => {
+const traverseByGrade = <T extends BaseTree<T>>(root: T, visit: IFunc<[node: T, root: T], void>) => {
   let checkItems = [root];
   while(checkItems.length) {
     const checkItem = <T>(checkItems.shift())
-    visit(checkItem);
+    visit(checkItem, root);
     if(checkItem.children?.length) {
       checkItems = checkItems.concat(<T[]>checkItem.children)
     }

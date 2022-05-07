@@ -1,11 +1,3 @@
-function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _unsupportedIterableToArray(arr, i) || _nonIterableRest(); }
-
-function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
-
-function _iterableToArrayLimit(arr, i) { var _i = arr == null ? null : typeof Symbol !== "undefined" && arr[Symbol.iterator] || arr["@@iterator"]; if (_i == null) return; var _arr = []; var _n = true; var _d = false; var _s, _e; try { for (_i = _i.call(arr); !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
-
-function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
-
 function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); enumerableOnly && (symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; })), keys.push.apply(keys, symbols); } return keys; }
 
 function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = null != arguments[i] ? arguments[i] : {}; i % 2 ? ownKeys(Object(source), !0).forEach(function (key) { _defineProperty(target, key, source[key]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)) : ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } return target; }
@@ -16,13 +8,21 @@ function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableTo
 
 function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
 
-function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
-
 function _iterableToArray(iter) { if (typeof Symbol !== "undefined" && iter[Symbol.iterator] != null || iter["@@iterator"] != null) return Array.from(iter); }
 
 function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) return _arrayLikeToArray(arr); }
 
+function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _unsupportedIterableToArray(arr, i) || _nonIterableRest(); }
+
+function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+
+function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
+
 function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) { arr2[i] = arr[i]; } return arr2; }
+
+function _iterableToArrayLimit(arr, i) { var _i = arr == null ? null : typeof Symbol !== "undefined" && arr[Symbol.iterator] || arr["@@iterator"]; if (_i == null) return; var _arr = []; var _n = true; var _d = false; var _s, _e; try { for (_i = _i.call(arr); !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
+
+function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
 
 function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
 
@@ -30,8 +30,13 @@ var defOptions = {
   retain: false,
   transValue: false,
   matchFullRules: true,
+  relativePath: false,
   priority: ['string', 'regExp', 'function']
 }; // import { mergeWith, get } from "lodash";
+
+var isDef = function isDef(val) {
+  return !!(val || val === 0);
+};
 
 var isRefrence = function isRefrence(checkItem) {
   return checkItem && ['object', 'function'].includes(_typeof(checkItem));
@@ -41,6 +46,56 @@ var splitEnd = function splitEnd(path) {
   var prefixPath = path.length > 1 ? path.slice(0, path.length - 1) : [];
   var endPath = path[path.length - 1];
   return [prefixPath, endPath];
+}; // const deleteProps = (obj: Record<string, unknown>, path: (number | string)[]): boolean => {
+//   const [prefixPath, endPath] = splitEnd(path);
+//   const o = get(obj, prefixPath);
+//   if (!isRefrence(o)) return false;
+//   delete o[endPath]
+//   return true
+// }
+
+
+var getDataSafely = function getDataSafely(obj, path, safely) {
+  var rollbacks = [];
+  var end = false;
+  var tapVal = path.reduce(function (o, p, idx) {
+    if (!isRefrence(o)) return undefined;
+
+    if (!isDef(o[p]) && safely) {
+      o[p] = Number.isFinite(o[p]) ? [] : {};
+      rollbacks.unshift(function () {
+        delete o[p];
+      });
+    }
+
+    if (idx === path.length - 1) {
+      end = true;
+    }
+
+    return o[p];
+  }, obj);
+
+  if (!end) {
+    rollbacks.forEach(function (func) {
+      return func();
+    });
+  }
+
+  return tapVal;
+};
+
+var setProps = function setProps(obj, path, value, safely) {
+  if (!isRefrence(obj)) return false;
+
+  var _splitEnd = splitEnd(path),
+      _splitEnd2 = _slicedToArray(_splitEnd, 2),
+      prefixPath = _splitEnd2[0],
+      endPath = _splitEnd2[1];
+
+  var o = getDataSafely(obj, prefixPath, safely);
+  if (!isRefrence(o)) return false;
+  o[endPath] = value;
+  return true;
 };
 
 var genJoinAndSplit = function genJoinAndSplit() {
@@ -91,7 +146,7 @@ var traverseByGrade = function traverseByGrade(root, visit) {
     var _checkItem$children;
 
     var checkItem = checkItems.shift();
-    visit(checkItem);
+    visit(checkItem, root);
 
     if ((_checkItem$children = checkItem.children) !== null && _checkItem$children !== void 0 && _checkItem$children.length) {
       checkItems = checkItems.concat(checkItem.children);
@@ -151,9 +206,17 @@ var createRuleTree = function createRuleTree(matchRules) {
   return root;
 };
 
-var createRuleDataTreeBase = function createRuleDataTreeBase() {
-  var parentNode = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
-  return function (data, ruleTree, testFunc) {
+var createRuleDataTree = function createRuleDataTree() {
+  var createRuleDataTreeBase = function createRuleDataTreeBase() {
+    for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+      args[_key] = arguments[_key];
+    }
+
+    var data = args[0],
+        ruleTree = args[1],
+        testFunc = args[2],
+        _args$ = args[3],
+        parentNode = _args$ === void 0 ? null : _args$;
     var checkItems = ruleTree.children;
     if (checkItems.length && !isRefrence(data)) return null;
 
@@ -177,16 +240,17 @@ var createRuleDataTreeBase = function createRuleDataTreeBase() {
         ruleDataNode.value = value;
         ruleDataNode.rulePath = matchPath;
         ruleDataNode.rule = matchRule;
-        createRuleDataTreeBase(ruleDataNode)(value, checkRule, testFunc);
+        createRuleDataTreeBase(value, checkRule, testFunc, ruleDataNode);
         children.push(ruleDataNode);
       });
     });
     parentNode.children = children;
     return parentNode;
   };
-};
 
-var createRuleDataTree = createRuleDataTreeBase(); // import { merge } from 'lodash';
+  return createRuleDataTreeBase.apply(void 0, arguments);
+}; // import { merge } from 'lodash';
+
 
 var createOptions = function createOptions(options) {
   var newOpts = typeof options === 'boolean' ? {
@@ -271,10 +335,10 @@ var createMatchFullRuleDataTree = function createMatchFullRuleDataTree(matchFull
  */
 
 
-var assignMatchRuleDataCreater = function assignMatchRuleDataCreater(rules, transValue) {
+var assignMatchRuleDataCreater = function assignMatchRuleDataCreater(rules, transValue, relativePath) {
   var matchNodes = new Set();
 
-  var assignLeafValue = function assignLeafValue(node) {
+  var assignLeafValue = function assignLeafValue(node, root) {
     var isLeaf = !node.children.length;
     if (!isLeaf) return;
     var transValData = rules.get(node.rule);
@@ -289,7 +353,17 @@ var assignMatchRuleDataCreater = function assignMatchRuleDataCreater(rules, tran
       return;
     }
 
-    node.parent.value[transValData] = node.value;
+    if (isDef(transValData)) {
+      if (Array.isArray(transValData)) {
+        var _node$parent;
+
+        var setObj = relativePath ? (_node$parent = node.parent) === null || _node$parent === void 0 ? void 0 : _node$parent.value : root.value;
+        setProps(setObj, transValData, node.value, true);
+      } else {
+        node.parent.value[transValData] = node.value;
+      }
+    }
+
     matchNodes.add(node);
   };
 
@@ -304,6 +378,7 @@ var adapterBase = function adapterBase(obj) {
   var options = createOptions(arguments.length <= 2 ? undefined : arguments[2]);
   var retain = options.retain,
       transValue = options.transValue,
+      relativePath = options.relativePath,
       matchFullRules = options.matchFullRules,
       priority = options.priority; // 创建匹配树
 
@@ -316,12 +391,11 @@ var adapterBase = function adapterBase(obj) {
   var ruleDataTree = createMatchFullRuleDataTree(matchFullRules)(obj, ruleTree, createTestFunc());
   if (!ruleDataTree) return obj; // 遍历规则-数据树的叶子节点，根据transValue配置进行key或值的转换
 
-  var _assignMatchRuleDataC = assignMatchRuleDataCreater(rules, transValue),
+  var _assignMatchRuleDataC = assignMatchRuleDataCreater(rules, transValue, relativePath),
       nodeCache = _assignMatchRuleDataC.nodeCache,
       visit = _assignMatchRuleDataC.visit;
 
   traverseByGrade(ruleDataTree, visit); // 对于匹配并成功转换的节点，根据retain配置判断是否保留转换前的项
-  // console.log(ruleDataTree, nodeCache)
 
   if (!retain) {
     nodeCache.forEach(function (node) {
@@ -334,8 +408,8 @@ var adapterBase = function adapterBase(obj) {
 };
 
 var adapter = function adapter(obj) {
-  for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
-    args[_key - 1] = arguments[_key];
+  for (var _len2 = arguments.length, args = new Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
+    args[_key2 - 1] = arguments[_key2];
   }
 
   if (Array.isArray(args[0])) {
@@ -347,7 +421,4 @@ var adapter = function adapter(obj) {
   return adapterBase.apply(void 0, [obj].concat(args));
 };
 
-Object.assign(window, {
-  adapter: adapter
-});
 export { adapter as default };

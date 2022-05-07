@@ -15,15 +15,37 @@ const splitEnd = <T = any>(path: T[]): [T[], T] => {
 //   delete o[endPath]
 //   return true
 // }
+const getDataSafely = (obj: Record<string, unknown>, path: (string|number)[], safely?: boolean) => {
+  const rollbacks = <IFunc<[],void>[]>[];
+  let end = false;
+  const tapVal = path.reduce((o: any, p, idx) => {
+    if(!isRefrence(o)) return undefined;
+    if(!isDef(o[p])&&safely) {
+      o[p] = Number.isFinite(o[p])?[]:{}
+      rollbacks.unshift(()=>{
+        delete o[p]
+      })
+    }
+    if(idx === path.length - 1) {
+      end = true
+    }
+    return o[p]
+  }, obj)
+  if(!end) {
+    rollbacks.forEach(func=>func())
+  }
+  return tapVal
+}
 
-// const setProps = (obj: Record<string, unknown>, path: (string|number)[], value: unknown): boolean => {
-//   if (!isRefrence(obj)) return false;
-//   const [prefixPath, endPath] = splitEnd(path);
-//   const o = get(obj, prefixPath);
-//   if (!isRefrence(o)) return false;
-//   o[endPath] = value;
-//   return true
-// }
+
+const setProps = (obj: Record<string, unknown>, path: (string|number)[], value: unknown, safely?: boolean): boolean => {
+  if (!isRefrence(obj)) return false;
+  const [prefixPath, endPath] = splitEnd(path);
+  const o = getDataSafely(obj, prefixPath, safely);
+  if (!isRefrence(o)) return false;
+  o[endPath] = value;
+  return true
+}
 
 // const rplArrayMerge = <T>(source: T, ...objArr: T[]) => {
 //   const rplArrayFunc = (before: unknown, after: unknown): unknown[] | void => {
@@ -68,7 +90,7 @@ export {
   isDef,
   isRefrence,
   // deleteProps,
-  // setProps,
+  setProps,
   // rplArrayMerge,
   cloneType,
   join,

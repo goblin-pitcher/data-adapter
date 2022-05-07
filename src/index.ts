@@ -1,7 +1,7 @@
 // import { merge } from 'lodash';
 import defOptions from './options';
 import { IFunc, BaseMatchRule, IOptions, MatchRule, Rules, TransformFunc } from './types';
-import { join, splitEnd } from './lib/utils'
+import { join, splitEnd, isDef, setProps } from './lib/utils'
 import { traverseByGrade, createRuleTree, createRuleDataTree, RuleNode, RuleDataNode, pruneTree } from './lib/data-struct-handler'
 
 type RequireOptions = Required<IOptions>
@@ -73,9 +73,9 @@ const createMatchFullRuleDataTree = (matchFullRules: boolean | undefined) => (..
  *  visit: IFunc<[RuleDataNode], void> 访问函数
  * }
  */
-const assignMatchRuleDataCreater = (rules: Rules, transValue: boolean | undefined) => {
+const assignMatchRuleDataCreater = (rules: Rules, transValue?: boolean, relativePath?: boolean) => {
   const matchNodes = new Set<RuleDataNode>()
-  const assignLeafValue = (node: RuleDataNode) => {
+  const assignLeafValue = (node: RuleDataNode, root: RuleDataNode) => {
     const isLeaf = !node.children.length;
     if (!isLeaf) return;
     let transValData = rules.get(<MatchRule>node.rule);
@@ -87,7 +87,14 @@ const assignMatchRuleDataCreater = (rules: Rules, transValue: boolean | undefine
       (<RuleDataNode>node.parent).value[endPath] = transValData;
       return;
     }
-    (<RuleDataNode>node.parent).value[transValData] = node.value;
+    if(isDef(transValData)) {
+      if(Array.isArray(transValData)) {
+        const setObj = relativePath?node.parent?.value: root.value;
+        setProps(setObj, transValData, node.value, true)
+      } else {
+        (<RuleDataNode>node.parent).value[transValData] = node.value;
+      }
+    }
     matchNodes.add(node);
   }
   return {
@@ -101,7 +108,7 @@ type RulesAndOptions = [rules: Rules, options: boolean | IOptions];
 const adapterBase = (obj: Record<string, unknown>, ...args: RulesAndOptions): Record<string, unknown> => {
   const rules = args[0];
   const options = createOptions(args[1]);
-  const { retain, transValue, matchFullRules, priority } = options;
+  const { retain, transValue, relativePath, matchFullRules, priority } = options;
   // 创建匹配树
   const ruleTree = createRuleTree([...rules.keys()]);
   // 根据配置的优先级对匹配规则进行排序
@@ -110,7 +117,7 @@ const adapterBase = (obj: Record<string, unknown>, ...args: RulesAndOptions): Re
   const ruleDataTree = createMatchFullRuleDataTree(matchFullRules)(obj, ruleTree, createTestFunc())
   if (!ruleDataTree) return obj;
   // 遍历规则-数据树的叶子节点，根据transValue配置进行key或值的转换
-  const { nodeCache, visit } = assignMatchRuleDataCreater(rules, transValue);
+  const { nodeCache, visit } = assignMatchRuleDataCreater(rules, transValue, relativePath);
   traverseByGrade(ruleDataTree, visit);
   // 对于匹配并成功转换的节点，根据retain配置判断是否保留转换前的项
 

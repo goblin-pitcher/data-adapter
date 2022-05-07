@@ -6,6 +6,7 @@ interface IOptions {
     retain?: boolean;
     transValue?: boolean;
     matchFullRules?: boolean;
+    relativePath?: boolean;
     priority?: keyRuleFuncName[];
 }
 declare type TransformFunc = IFunc<[path: (string | number)[], value: any, matchPath: BaseMatchRule[], matchRule: MatchRule], any>;

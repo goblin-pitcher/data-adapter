@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  </head>
+  <body>
+    <script src="https://cdn.bootcdn.net/ajax/libs/lodash.js/4.17.21/lodash.min.js"></script>
+    <script>
+      const {get, omit, cloneDeep} = _;
+      const typeOf = (val) => Object.prototype.toString
+  .call(val)
+  .match(/\[.+?\s(.+?)\]/)[1]
+  .replace(/^\w/, (item) => item.toLowerCase());
+const setProps = (obj, path, val, failVal) => {
+  const isReference = (checkItem) => ['array', 'object'].includes(typeOf(checkItem));
+  if (!obj || !isReference(obj)) return false;
+  path = [].concat(path);
+  const end = path.length - 1;
+  const condition = Object.create(null); // 设置一个引用变量作为标识
+  return path.reduce((o, key, index) => {
+    if (index < end) {
+      return key in o ? o[key] : condition; // 若该路径下的元素不存在，则返回标识
+    }
+    if (o === condition) return false; // 若obj的地址指向标识，说明之前路径的某个元素不存在，返回false
+    if (!o || !isReference(o)) {
+      if (isReference(failVal)) {
+        setProps(obj, path.slice(0, index), failVal);
+        o = get(obj, path.slice(0, index));
+      } else {
+        return false;
+      }
+    }
+    o[key] = val;
+    if (o[key] === val) {
+      // 若该项是数组或对象，可以成功放入，基础类型会放入失败
+      return true;
+    }
+    return false;
+  }, obj);
+};
+// ========================test=============================
+// const rule={'e|a':'b.a', 'b.c':'b.d', '/^c/': 'b.f', 'b.ff':'b.g.f',e: (data, path, obj)=>obj.a+obj.ca, 'b.c': (data)=>data**2}
+// const obj = {a:5,b:{g:{f:"xxx"},a:5,d:7,f:9},ca:8,cd:9}
+// console.log(adapter(cloneDeep,rule)) // 删除适配前的项
+// console.log(adapter(cloneDeep,rule,true)) // 保留适配前的项
+const dataAdapter = (...args) => {
+  const nul = Symbol('null');
+  const rmvProp = (obj, path) => {
+    if (!(Array.isArray(path) && path.length)) { path = [...path]; }
+    const endPath = path.pop();
+    const findRefer = path.length ? get(obj, path, nul) : obj;
+    if (findRefer === nul) return false;
+    // obj={a:{b:[1,2]}}, rule: {'b.1','c'} => {a:{c:1}}
+    if(Array.isArray(findRefer)) {
+      const referPath = path.pop()
+      const parentObj = get(obj, path, obj)
+      return delete parentObj[referPath]
+    }
+    return delete findRefer[endPath]
+  };
+  const matchRegStr = /\/([\s\S]+?)\//;
+  const strToPath = (key) => key.split('|').map((item) => item.split('.'));
+  const joinPath = (item) => item.join('.');
+  const pathToStr = (arr) => arr.map(joinPath).join('|');
+  const setPropsByRuleVal = (o, ruleVal, val, cb = () => null) => strToPath(ruleVal).reduce((setRst, setPath) => {
+    if (setRst) return setRst; 
+    setRst = setProps(o, setPath.filter(Boolean), val, {});
+    if (setRst) {
+      cb();
+    }
+    return setRst;
+  }, false);
+
+  const filterFuncKey = (obj, rule, toRetain) => {
+    const newObj = { ...obj };
+    const isDefinited = (key) => !matchRegStr.test(key) && strToPath(key).length <= 1;
+    const ruleFuncKeys = Object.keys(rule)
+      .filter((key) => typeOf(rule[key]) === 'function' && isDefinited(key));
+
+    ruleFuncKeys.forEach((key) => {
+      const fn = rule[key];
+      const path = strToPath(key)[0];
+      const oldVal = get(newObj, path, nul);
+      if (oldVal === nul) {
+        setPropsByRuleVal(newObj, key, fn(null, path, obj));
+      } else {
+        setPropsByRuleVal(newObj, key, fn(oldVal, path, obj));
+      }
+    });
+    return [newObj, omit(rule, ruleFuncKeys), toRetain];
+  };
+
+  const filterRegKey = (obj, rule, toRetain) => {
+    const newObj = { ...obj };
+    const ruleRegKeys = Object.keys(rule)
+      .filter((key) => matchRegStr.test(key));
+    const regTrans = ruleRegKeys
+      .map((key) => new RegExp(key.match(matchRegStr)[1]));
+    const transObj = Object.keys(obj).reduce((o, key) => {
+      const findReg = regTrans.filter((reg) => reg.test(key));
+      if (findReg.length) {
+        const transKey = rule[findReg[0].toString()];
+        // newObj[transKey] = obj[key]
+        setPropsByRuleVal(newObj, transKey, obj[key], toRetain ? undefined : (() => { rmvProp(o, strToPath(key)[0]); }));
+      }
+      return newObj;
+    }, newObj);
+    return [transObj, omit(rule, ruleRegKeys), toRetain];
+  };
+  const filterStrKey = (obj, rule, toRetain) => {
+    const newObj = { ...obj };
+    const ruleStrKeys = Object.keys(rule)
+      .filter((key) => !(matchRegStr.test(key) || typeOf(rule[key]) === 'function'));
+    const ruleKeyPaths = ruleStrKeys.map(strToPath);
+    const transObj = ruleKeyPaths.reduce((o, pathArr = []) => {
+      pathArr.reduce((find, path = []) => {
+        if (find) return find;
+        const val = get(obj, path, nul);
+        if (val !== nul) {
+          find = true;
+          const ruleVal = rule[pathToStr(pathArr)];
+          setPropsByRuleVal(o, ruleVal, val, toRetain ? undefined : (() => { rmvProp(o, path); }));
+        }
+        return find;
+      }, false);
+
+      return newObj;
+    }, newObj);
+    return [transObj, rule, toRetain];
+  };
+  const waterFaillHandler = (funcArr) => {
+    const transFunc = (val) => val;
+    if (!funcArr.length) return transFunc;
+    return funcArr.reduce((a = transFunc, b = transFunc) => (...arr) => b(...a(...arr)));
+  };
+  const [transObj] = waterFaillHandler([filterFuncKey, filterRegKey, filterStrKey])(...args);
+  return transObj;
+};
+const adapter = (obj, rules, toRetain) => {
+  rules = [].concat(rules);
+  rules.forEach((rule) => {
+    obj = dataAdapter(obj, rule, toRetain);
+  });
+  return obj;
+};
+      // ========================test=============================
+      const rule={'c|a':'b.a', 'b.c':'b.d', '/^c/': 'b.f', 'b.ff':'b.g.f', e: (data, path, obj)=>obj.a+obj.ca, 'b.c': (data)=>data**2}
+      const obj = {
+        a: 5,
+        b: {
+         c: 7,
+         ff: 'xxx',
+         g: {}
+        },
+        ca: 8,
+        cd: 9,
+      }
+      console.log(adapter(cloneDeep(obj),rule)) // 删除适配前的项
+      console.log(adapter(cloneDeep(obj),rule,true)) // 保留适配前的项
+    </script>
+  </body>
+</html>
