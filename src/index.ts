@@ -130,10 +130,15 @@ const adapterBase = (obj: Record<string, unknown>, ...args: RulesAndOptions): Re
   return obj;
 }
 
-const adapter = (obj: Record<string, unknown>, ...args: RulesAndOptions | [RulesAndOptions[]]) => {
+interface Adapter {
+  (obj: Record<string, unknown>, ...args: RulesAndOptions): Record<string, unknown>;
+  (obj: Record<string, unknown>, ...args: RulesAndOptions[]): Record<string, unknown>;
+}
+
+const adapter: Adapter = (obj, ...args) => {
   if (Array.isArray(args[0])) {
     return args[0].reduce((rtn, argArr) => {
-      return adapterBase(rtn, ...argArr)
+      return adapterBase(rtn, ...<RulesAndOptions>argArr)
     }, obj)
   }
   return adapterBase(obj, ...<RulesAndOptions>args);

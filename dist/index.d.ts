@@ -1,5 +1,9 @@
 import { IOptions, Rules } from './types';
 declare type RulesAndOptions = [rules: Rules, options: boolean | IOptions];
-declare const adapter: (obj: Record<string, unknown>, ...args: RulesAndOptions | [RulesAndOptions[]]) => Record<string, unknown>;
+interface Adapter {
+    (obj: Record<string, unknown>, ...args: RulesAndOptions): Record<string, unknown>;
+    (obj: Record<string, unknown>, ...args: RulesAndOptions[]): Record<string, unknown>;
+}
+declare const adapter: Adapter;
 export default adapter;
 //# sourceMappingURL=index.d.ts.map
