@@ -1,5 +1,5 @@
 import { IOptions, Rules } from './types';
-declare type RulesAndOptions = [rules: Rules, options: boolean | IOptions];
+type RulesAndOptions = [rules: Rules, options: boolean | IOptions];
 interface Adapter {
     (obj: Record<string, unknown>, ...args: RulesAndOptions): Record<string, unknown>;
     (obj: Record<string, unknown>, ...args: RulesAndOptions[]): Record<string, unknown>;

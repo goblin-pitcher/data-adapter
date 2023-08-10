@@ -1,7 +1,7 @@
 // import { merge } from 'lodash';
 import defOptions from './options';
 import { IFunc, BaseMatchRule, IOptions, MatchRule, Rules, TransformFunc } from './types';
-import { join, splitEnd, isDef, setProps } from './lib/utils'
+import { splitEnd, isDef, setProps } from './lib/utils'
 import { traverseByGrade, createRuleTree, createRuleDataTree, RuleNode, RuleDataNode, pruneTree } from './lib/data-struct-handler'
 
 type RequireOptions = Required<IOptions>
@@ -17,28 +17,19 @@ const getRuleType = (rule: BaseMatchRule) => {
   return 'regExp';
 }
 
-const createTestFunc = (): IFunc<[...args: Parameters<TransformFunc>], boolean> => {
-  const banList = new Set();
-  return (path, value, matchPath, matchRule) => {
-    const testKey = join(path);
-    let rst = false;
-
-    if (banList.has(testKey)) return rst;
-    const testRule = <BaseMatchRule>matchPath[matchPath.length - 1];
-    const key = path[path.length - 1]
-    const ruleType = getRuleType(testRule);
-    if (ruleType === 'string') {
-      rst = key === testRule
-    } else if (ruleType === 'regExp') {
-        rst = (<RegExp>testRule).test(`${key}`);
-    } else {
-      rst = (<TransformFunc>testRule)(path, value, matchPath, matchRule)
-    }
-    if (rst) {
-      banList.add(testKey)
-    }
-    return rst
+const TapFunc : IFunc<[...args: Parameters<TransformFunc>], boolean> =  (path, value, matchPath, matchRule) => {
+  let rst = false;
+  const testRule = <BaseMatchRule>matchPath[matchPath.length - 1];
+  const key = path[path.length - 1]
+  const ruleType = getRuleType(testRule);
+  if (ruleType === 'string') {
+    rst = key === testRule
+  } else if (ruleType === 'regExp') {
+      rst = (<RegExp>testRule).test(`${key}`);
+  } else {
+    rst = (<TransformFunc>testRule)(path, value, matchPath, matchRule)
   }
+  return rst
 }
 
 const sortRuleByPriority = (node: RuleNode, priority: Required<IOptions>["priority"]) => {
@@ -112,7 +103,7 @@ const adapterBase = (obj: Record<string, unknown>, ...args: RulesAndOptions): Re
   // 根据配置的优先级对匹配规则进行排序
   traverseByGrade(ruleTree, (node) => sortRuleByPriority(node, priority));
   // 生成规则-数据树，matchFullRules配置决定是否剪去没有完全匹配规则的节点
-  const ruleDataTree = createMatchFullRuleDataTree(matchFullRules)(obj, ruleTree, createTestFunc())
+  const ruleDataTree = createMatchFullRuleDataTree(matchFullRules)(obj, ruleTree, TapFunc)
   if (!ruleDataTree) return obj;
   // 遍历规则-数据树的叶子节点，根据transValue配置进行key或值的转换
   const { nodeCache, visit } = assignMatchRuleDataCreater(rules, transValue, relativePath);
