@@ -126,7 +126,8 @@ interface Adapter {
 
 const adapter: Adapter = (obj, ...args) => {
   if (Array.isArray(args[0])) {
-    return args[0].reduce((rtn, argArr) => {
+    return (<RulesAndOptions[]>args).reduce((rtn, argArr) => {
+      if(!argArr.length) return rtn
       return adapterBase(rtn, ...<RulesAndOptions>argArr)
     }, obj)
   }

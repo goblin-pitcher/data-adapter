@@ -335,7 +335,8 @@ var adapter = function adapter(obj) {
     args[_key2 - 1] = arguments[_key2];
   }
   if (Array.isArray(args[0])) {
-    return args[0].reduce(function (rtn, argArr) {
+    return args.reduce(function (rtn, argArr) {
+      if (!argArr.length) return rtn;
       return adapterBase.apply(void 0, [rtn].concat(_toConsumableArray(argArr)));
     }, obj);
   }
