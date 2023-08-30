@@ -96,7 +96,7 @@ const createRuleDataTree: CreateRuleDataTree =(...args) => {
   const createRuleDataTreeBase =  (...args: [...Parameters<CreateRuleDataTree>, ...[parentNode?: RuleDataNode]]) =>{
     let [data, ruleTree, testFunc, parentNode = null] = args;
     const checkItems = ruleTree.children;
-    if (checkItems.length && !isRefrence(data)) return null;
+    if (!checkItems.length || !isRefrence(data)) return data;
     if (!parentNode) {
       parentNode = createDefRuleDataNode();
       parentNode.value = data;

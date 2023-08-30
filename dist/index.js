@@ -176,7 +176,7 @@ var createRuleDataTree = function createRuleDataTree() {
       _args$ = args[3],
       parentNode = _args$ === void 0 ? null : _args$;
     var checkItems = ruleTree.children;
-    if (checkItems.length && !isRefrence(data)) return null;
+    if (!checkItems.length || !isRefrence(data)) return data;
     if (!parentNode) {
       parentNode = createDefRuleDataNode();
       parentNode.value = data;
