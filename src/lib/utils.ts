@@ -8,6 +8,8 @@ const splitEnd = <T = any>(path: T[]): [T[], T] => {
   return [prefixPath, endPath]
 }
 
+const getTop = (val: unknown) => Array.isArray(val) ? val[val.length - 1] : null;
+
 // const deleteProps = (obj: Record<string, unknown>, path: (number | string)[]): boolean => {
 //   const [prefixPath, endPath] = splitEnd(path);
 //   const o = get(obj, prefixPath);
@@ -89,6 +91,7 @@ const syncBailHandler = <T extends any[], R>(funcs: IFunc<T, R>[], bailFunc: IFu
 export {
   isDef,
   isRefrence,
+  getTop,
   // deleteProps,
   setProps,
   // rplArrayMerge,

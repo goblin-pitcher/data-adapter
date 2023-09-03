@@ -34,6 +34,9 @@ var splitEnd = function splitEnd(path) {
   var endPath = path[path.length - 1];
   return [prefixPath, endPath];
 };
+var getTop = function getTop(val) {
+  return Array.isArray(val) ? val[val.length - 1] : null;
+};
 // const deleteProps = (obj: Record<string, unknown>, path: (number | string)[]): boolean => {
 //   const [prefixPath, endPath] = splitEnd(path);
 //   const o = get(obj, prefixPath);
@@ -291,6 +294,10 @@ var assignMatchRuleDataCreater = function assignMatchRuleDataCreater(rules, tran
       } else {
         node.parent.value[transValData] = node.value;
       }
+    } else {
+      var _node$parent2;
+      var key = getTop((_node$parent2 = node.parent) === null || _node$parent2 === void 0 ? void 0 : _node$parent2.rule);
+      key && delete node.value[key];
     }
     matchNodes.add(node);
   };

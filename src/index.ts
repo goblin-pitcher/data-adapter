@@ -1,7 +1,7 @@
 // import { merge } from 'lodash';
 import defOptions from './options';
 import { IFunc, BaseMatchRule, IOptions, MatchRule, Rules, TransformFunc } from './types';
-import { splitEnd, isDef, setProps } from './lib/utils'
+import { splitEnd, isDef, setProps, getTop } from './lib/utils'
 import { traverseByGrade, createRuleTree, createRuleDataTree, RuleNode, RuleDataNode, pruneTree } from './lib/data-struct-handler'
 
 type RequireOptions = Required<IOptions>
@@ -83,6 +83,9 @@ const assignMatchRuleDataCreater = (rules: Rules, transValue?: boolean, relative
       } else {
         (<RuleDataNode>node.parent).value[transValData] = node.value;
       }
+    } else {
+      const key = getTop(node.parent?.rule);
+      key && (delete node.value[key]);
     }
     matchNodes.add(node);
   }

@@ -40,6 +40,22 @@ describe('adapter test', ()=>{
     })
   });
 
+  it('delete items', ()=> {
+    rules.set([/c\w/], '');
+    const rst = adapter(obj, rules)
+    expect(rst).toEqual({
+      'transKey-a':5,
+      b:{
+        g:{
+          'transKey-f':"xxx"
+        },
+        a:5,
+        d:7,
+        f:9
+      }
+    })
+  })
+
   it('options test', ()=>{
     const rst = adapter(obj, rules, {retain: true, matchFullRules: false})
     expect(rst).toEqual({

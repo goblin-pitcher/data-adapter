@@ -65,9 +65,10 @@ adapter(obj, rules)
 
 具体可参考测试[示例](https://github.com/goblin-pitcher/data-adapter/blob/master/tests/adapter.test.js)
 
-````txt
-npm i git+https://github.com/goblin-pitcher/data-adapter.git -S
---------
+````javascript
+// npm i git+https://github.com/goblin-pitcher/data-adapter.git -S
+/*--------*/
+
 import adapter from 'data-adapter';
 const obj = {
   a:5,
@@ -76,11 +77,14 @@ const obj = {
       f:"xxx"
     },
     a:5,
-  }
+  },
+  ca: 7,
+  cb: 8
 }
 const rules = new Map([
   ['a', 'transKey-a'],
-  [['b', /a|g/, 'f'], (path, value)=>`transKey-${path[path.length - 1]}`]
+  [['b', /a|g/, 'f'], (path, value)=>`transKey-${path[path.length - 1]}`],
+  [[/c\w/], '']
 ])
 
 // 转换后数据格式如下：
@@ -169,13 +173,11 @@ const testFunc = (path, value) => path[path.length-1].endsWith('b')
 const rules = new Map([[[/a|e/, ['b', /^b/, testFunc], 'xxx'], 'transValue']]);
 const data = {
     a: {
-        b: {
-			xxx: 7
-		},
+        b: { xxx: 7 },
         ab: {abc: 4},
     },
-	b: 5,
-	e: {acb: {xxx: 6}}
+    b: 5,
+    e: {acb: {xxx: 6}}
 }
 ````
 
