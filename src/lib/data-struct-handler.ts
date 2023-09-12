@@ -108,7 +108,7 @@ const createRuleDataTree: CreateRuleDataTree =(...args) => {
       checkItems.forEach(checkRule => {
         const matchPath = checkRule.rulePath;
         const matchRule = <MatchRule>checkRule.rule;
-        const isTreeNode = testFunc(path, value, matchPath, matchRule);
+        const isTreeNode = testFunc(path, value, matchPath, matchRule, data);
         if (!isTreeNode) return;
         const ruleDataNode = createDefRuleDataNode();
         ruleDataNode.parent = parentNode;

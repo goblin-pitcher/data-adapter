@@ -17,7 +17,7 @@ const getRuleType = (rule: BaseMatchRule) => {
   return 'regExp';
 }
 
-const TapFunc : IFunc<[...args: Parameters<TransformFunc>], boolean> =  (path, value, matchPath, matchRule) => {
+const TapFunc : IFunc<[...args: Parameters<TransformFunc>], boolean> =  (path, value, matchPath, matchRule, data) => {
   let rst = false;
   const testRule = <BaseMatchRule>matchPath[matchPath.length - 1];
   const key = path[path.length - 1]
@@ -27,7 +27,7 @@ const TapFunc : IFunc<[...args: Parameters<TransformFunc>], boolean> =  (path, v
   } else if (ruleType === 'regExp') {
       rst = (<RegExp>testRule).test(`${key}`);
   } else {
-    rst = (<TransformFunc>testRule)(path, value, matchPath, matchRule)
+    rst = (<TransformFunc>testRule)(path, value, matchPath, matchRule, data)
   }
   return rst
 }
@@ -62,7 +62,7 @@ const createMatchFullRuleDataTree = (matchFullRules: boolean | undefined) => (..
  *  visit: IFunc<[RuleDataNode], void> 访问函数
  * }
  */
-const assignMatchRuleDataCreater = (rules: Rules, transValue?: boolean, relativePath?: boolean) => {
+const assignMatchRuleDataCreater = <T>(rules: Rules, data: T, transValue?: boolean, relativePath?: boolean) => {
   const matchNodes = new Set<RuleDataNode>()
   const assignLeafValue = (node: RuleDataNode, root: RuleDataNode) => {
     const isLeaf = !node.children.length;
@@ -70,7 +70,7 @@ const assignMatchRuleDataCreater = (rules: Rules, transValue?: boolean, relative
     let transValData = rules.get(<MatchRule>node.rule);
     const endPath = splitEnd(node.path)[1]
     if (typeof transValData === 'function') {
-      transValData = transValData(node.path, node.value, node.rulePath, node.rule)
+      transValData = transValData(node.path, node.value, node.rulePath, node.rule, data)
     }
     if (transValue) {
       (<RuleDataNode>node.parent).value[endPath] = transValData;
@@ -109,7 +109,7 @@ const adapterBase = (obj: Record<string, unknown>, ...args: RulesAndOptions): Re
   const ruleDataTree = createMatchFullRuleDataTree(matchFullRules)(obj, ruleTree, TapFunc)
   if (!ruleDataTree) return obj;
   // 遍历规则-数据树的叶子节点，根据transValue配置进行key或值的转换
-  const { nodeCache, visit } = assignMatchRuleDataCreater(rules, transValue, relativePath);
+  const { nodeCache, visit } = assignMatchRuleDataCreater(rules, obj,  transValue, relativePath);
   traverseByGrade(ruleDataTree, visit);
   // 对于匹配并成功转换的节点，根据retain配置判断是否保留转换前的项
 

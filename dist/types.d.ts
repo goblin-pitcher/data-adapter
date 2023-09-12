@@ -9,7 +9,7 @@ interface IOptions {
     relativePath?: boolean;
     priority?: keyRuleFuncName[];
 }
-type TransformFunc = IFunc<[path: (string | number)[], value: any, matchPath: BaseMatchRule[], matchRule: MatchRule], any>;
+type TransformFunc = IFunc<[path: (string | number)[], value: any, matchPath: BaseMatchRule[], matchRule: MatchRule, data: any], any>;
 type BaseMatchRule = string | RegExp | TransformFunc;
 type MatchRule = BaseMatchRule | (BaseMatchRule | BaseMatchRule[])[];
 type Rules = Map<MatchRule, any>;

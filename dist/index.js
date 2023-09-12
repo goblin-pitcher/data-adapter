@@ -191,7 +191,7 @@ var createRuleDataTree = function createRuleDataTree() {
       checkItems.forEach(function (checkRule) {
         var matchPath = checkRule.rulePath;
         var matchRule = checkRule.rule;
-        var isTreeNode = testFunc(path, value, matchPath, matchRule);
+        var isTreeNode = testFunc(path, value, matchPath, matchRule, data);
         if (!isTreeNode) return;
         var ruleDataNode = createDefRuleDataNode();
         ruleDataNode.parent = parentNode;
@@ -222,7 +222,7 @@ var getRuleType = function getRuleType(rule) {
   if (ruleType === 'function') return 'function';
   return 'regExp';
 };
-var TapFunc = function TapFunc(path, value, matchPath, matchRule) {
+var TapFunc = function TapFunc(path, value, matchPath, matchRule, data) {
   var rst = false;
   var testRule = matchPath[matchPath.length - 1];
   var key = path[path.length - 1];
@@ -232,7 +232,7 @@ var TapFunc = function TapFunc(path, value, matchPath, matchRule) {
   } else if (ruleType === 'regExp') {
     rst = testRule.test("".concat(key));
   } else {
-    rst = testRule(path, value, matchPath, matchRule);
+    rst = testRule(path, value, matchPath, matchRule, data);
   }
   return rst;
 };
@@ -272,7 +272,7 @@ var createMatchFullRuleDataTree = function createMatchFullRuleDataTree(matchFull
  *  visit: IFunc<[RuleDataNode], void> 访问函数
  * }
  */
-var assignMatchRuleDataCreater = function assignMatchRuleDataCreater(rules, transValue, relativePath) {
+var assignMatchRuleDataCreater = function assignMatchRuleDataCreater(rules, data, transValue, relativePath) {
   var matchNodes = new Set();
   var assignLeafValue = function assignLeafValue(node, root) {
     var isLeaf = !node.children.length;
@@ -280,7 +280,7 @@ var assignMatchRuleDataCreater = function assignMatchRuleDataCreater(rules, tran
     var transValData = rules.get(node.rule);
     var endPath = splitEnd(node.path)[1];
     if (typeof transValData === 'function') {
-      transValData = transValData(node.path, node.value, node.rulePath, node.rule);
+      transValData = transValData(node.path, node.value, node.rulePath, node.rule, data);
     }
     if (transValue) {
       node.parent.value[endPath] = transValData;
@@ -324,7 +324,7 @@ var adapterBase = function adapterBase(obj) {
   var ruleDataTree = createMatchFullRuleDataTree(matchFullRules)(obj, ruleTree, TapFunc);
   if (!ruleDataTree) return obj;
   // 遍历规则-数据树的叶子节点，根据transValue配置进行key或值的转换
-  var _assignMatchRuleDataC = assignMatchRuleDataCreater(rules, transValue, relativePath),
+  var _assignMatchRuleDataC = assignMatchRuleDataCreater(rules, obj, transValue, relativePath),
     nodeCache = _assignMatchRuleDataC.nodeCache,
     visit = _assignMatchRuleDataC.visit;
   traverseByGrade(ruleDataTree, visit);
